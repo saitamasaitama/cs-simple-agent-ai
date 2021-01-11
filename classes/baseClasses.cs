@@ -1,109 +1,257 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 //センシング、コンピューティング、アクション
 
-public abstract class Agent<SIG_IN, SIG_OUT, SENS, ACTI, COMP, AK, SK>
-  where SIG_IN : SignalIn
-  where SIG_OUT : SignalOut
-  where SENS : Sensor<SK>
-  where ACTI : Actuator<SIG_OUT, AK>
-  where COMP : Computer<SIG_IN, SIG_OUT, SENS, AK, SK>
-  where AK : Enum
-  where SK : Enum
+/// <summary>
+/// ワールドに出力するシグナル
+/// </summary>
+/// <typeparam name="AGENT"></typeparam>
+public abstract class SignalOut<AGENT>
 {
-
-  public readonly SENS sensor;
-  public readonly COMP computing;
-  public readonly ACTI actuator;
-
-  protected Agent(SENS sensor, COMP computer, ACTI actiator)
+  public AGENT origin;
+  public SignalOut(AGENT origin)
   {
-    this.sensor = sensor;
-    this.computing = computer;
-    this.actuator = actiator;
+    this.origin = origin;
   }
-
-  /*
-  public SIG_OUT Dispatch(SIG_IN sigin) =>
-    computing.Compute(sigin,this.sensor)(this.actuator);
-  */
-  public SIG_OUT Dispatch(SIG_IN sigin)
-  {
-    return computing.Compute(sigin, this.sensor)(this.actuator);
-  }
-
-
 }
 
-public abstract class Sensor<SK>
-  where SK : Enum
-{
-}
-
-
-
-//これは他のクラスからも参照されることも
-public abstract class SignalOut
-{
-  protected virtual bool isTrue()
-  {
-    return true;
-  }
-  public static implicit operator bool(SignalOut s) => s.isTrue();
-}
-
+/// <summary>
+/// ワールドから入力に使うシグナル
+/// </summary>
 public abstract class SignalIn
 {
-  protected virtual bool isTrue()
-  {
-    return true;
-  }
-  public static implicit operator bool(SignalIn s) => s.isTrue();
 }
 
-public abstract class Computer<SIG_IN, SIG_OUT, SENS, AK, SK>
-  where SIG_IN : SignalIn
-  where SIG_OUT : SignalOut
-  where SENS : Sensor<SK>
-  where AK : Enum
-  where SK : Enum
+
+/// <summary>
+/// シグナル基本クラス
+/// </summary>
+/// <typeparam name="SIG_IN"></typeparam>
+/// <typeparam name="SIG_OUT"></typeparam>
+/// <typeparam name="AGENT"></typeparam>
+public interface SignalIO<SIG_IN,SIG_OUT,AGENT>
+  where SIG_IN:SignalIn
+  where SIG_OUT:SignalOut<AGENT>
 {
-  /// <summary>
-  /// コンピューターはアクチュエーターには単純なシグナルしか送ることはできず、
-  /// アクチュエーターは入力からシグナルを生成する。
-  /// </summary>
-  /// <param name="sigin"></param>
-  /// <param name="s"></param>
-  /// <returns></returns>
-  public abstract Func<Actuator<SIG_OUT, AK>, SIG_OUT> Compute(
-    SIG_IN sigin, SENS s
-  );
-  //public virtual SIGOUT ComputeSignal(SENS sensor,AC)
-
-  public abstract AK DraftActuate();
-  private Memory memory;
+  SIG_OUT Input(SIG_IN sig_in);
+  void Push(SIG_IN sig_in);
+  SIG_OUT Pull();
+  void Buff(SIG_OUT data);
 }
 
+/// <summary>
+/// シグナル中間者
+/// </summary>
+/// <typeparam name="SIG_IN"></typeparam>
+/// <typeparam name="SIG_OUT"></typeparam>
+/// <typeparam name="AGENT"></typeparam>
+public abstract class SignalController<SIG_IN, SIG_OUT,AGENT>
+  :SignalIO<SIG_IN,SIG_OUT,AGENT>
+  where SIG_IN:SignalIn
+  where SIG_OUT:SignalOut<AGENT>
+{
+
+  public AGENT Agent => agent;
+  private AGENT agent;
+  private SIG_OUT buff;
+  protected abstract SIG_OUT Dispatch(SIG_IN input,AGENT agent);
+
+  public SIG_OUT SendAgent(AGENT agent,SIG_IN sig)
+  {
+    this.agent = agent;
+    return this.Input(sig);
+  }
+
+  public SIG_OUT Input(SIG_IN sig_in)
+  {
+    Push(sig_in);
+    return Pull();
+  }
+  public void Buff(SIG_OUT data)
+  {
+    this.buff = data;
+  }
+  public SIG_OUT Pull()
+  {
+    return buff;
+  }
+  public void Push(SIG_IN sig_in)
+  {
+    Buff(Dispatch(sig_in,Agent));
+  }
+
+}
+
+/// <summary>
+/// センサはどうしよう
+/// </summary>
+public abstract class Sensor<CONTROL_IN,SOUT>
+{
+  public abstract SOUT Sense(CONTROL_IN tin);
+}
+
+
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="SENSOR"></typeparam>
+/// <typeparam name="ACTUATOR"></typeparam>
+/// <typeparam name="COMPUTER"></typeparam>
+public abstract class Agent<
+  SENSOR, ACTUATOR,COMPUTER,
+  CONTROL_IN,CONTROL_OUT,
+  SENSOR_OUT,ACTUATOR_IN>
+  where SENSOR:Sensor<CONTROL_IN,SENSOR_OUT>
+  where ACTUATOR:Actuator<ACTUATOR_IN, CONTROL_OUT>
+  where COMPUTER:Computer<ACTUATOR,SENSOR_OUT,CONTROL_OUT,ACTUATOR_IN>
+{
+  private readonly SENSOR sensor;
+  private readonly ACTUATOR actuator;
+  private readonly COMPUTER computer;
+  protected abstract SENSOR initSensor();
+  protected abstract ACTUATOR initActuator();
+  protected abstract COMPUTER initComputer();
+
+  public Agent() {
+    this.sensor = initSensor();
+    this.actuator = initActuator();
+    this.computer = initComputer();
+  }
+
+  public CONTROL_OUT Request(CONTROL_IN controlIn)
+  {
+    return this.computer.Compute(sensor.Sense(controlIn),actuator);
+  }
+  
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="SENS"></typeparam>
+/// <typeparam name="ACTU"></typeparam>
+public abstract class Computer<
+  ACTU,
+  SENSOR_OUT,
+  CONTROL_OUT,
+  ACTUATOR_IN>
+  where ACTU:Actuator<ACTUATOR_IN, CONTROL_OUT>
+{
+  public CONTROL_OUT Compute(SENSOR_OUT sensorOut,ACTU actuator)
+  {
+    return actuator.Actuate(doComputeActuate(sensorOut));
+  }
+
+  protected abstract ACTUATOR_IN doComputeActuate(SENSOR_OUT sensorOut);
+}
+
+/// <summary>
+/// 
+/// </summary>
+public abstract class Actuator<ACTUATOR_IN,CONTROL_OUT>
+{
+  public abstract CONTROL_OUT Actuate(ACTUATOR_IN tin);
+}
+
+
+
+/// <summary>
+/// 
+/// </summary>
 public abstract class Memory
 {
 
 }
 
-public abstract class Actuator<SIG_OUT, AK> : Dictionary<AK, Func<SIG_OUT>>
-  where SIG_OUT : SignalOut
-  where AK : Enum
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="CONTROL_OUT"></typeparam>
+/// <typeparam name="AGENT"></typeparam>
+/// <typeparam name="WORLD"></typeparam>
+public abstract class Resolver<CONTROL_OUT,AGENT,WORLD>:Stack<CONTROL_OUT>
+  where WORLD:World
+  where CONTROL_OUT:SignalOut<AGENT>
 {
-  public abstract SIG_OUT Send(AK key);
+  private WORLD world;
+  public Resolver(WORLD world)
+  {
+    this.world=world;
+  }
+
+  public event Action OnResolved;
+  public void Send(CONTROL_OUT sig)
+  {
+    this.Push(sig);
+    if (isResolvable())
+    {
+      while (0<this.Count)
+      {
+        ResolveSingle(this.Pop(),this.world);
+      }
+      OnResolved();
+    }
+  }
+  protected abstract void ResolveSingle(CONTROL_OUT sigout,WORLD world);
+  //現状解決しているか
+  protected abstract bool isResolvable();
 }
 
-public abstract class Resolver
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="SIG"></typeparam>
+/// <typeparam name="AGENT"></typeparam>
+/// <typeparam name="RESOLVER"></typeparam>
+/// <typeparam name="WORLD"></typeparam>
+public abstract class Fight<SIG,AGENT,RESOLVER,WORLD>
+  where WORLD:World
+  where SIG: SignalOut<AGENT>
+  where RESOLVER:Resolver<SIG,AGENT,WORLD>
 {
+  public readonly AGENT A;
+  public readonly AGENT B;
+  public Fight(AGENT a, AGENT b)
+  {
+    this.A = a;
+    this.B = b;
+  }
+  public abstract void Resolve(RESOLVER resolver);
 
 }
 
-public abstract class Condactor
+/// <summary>
+/// 
+/// </summary>
+public abstract class Resource
 {
+  public abstract bool Use();
+  public bool Empty=>isEmpty();
+  protected abstract bool isEmpty();
+}
+
+/// <summary>
+/// World
+/// </summary>
+public abstract class World
+{
+  public bool Continue => isContunue();
+  public List<Resource> Resources => resources;
+  private List<Resource> resources;
+  public abstract bool isContunue();
+
+  public void Init()
+  {
+    resources=initResources();
+  }
+
+  public abstract List<Resource> initResources();
+
 
 }
+
+
+

@@ -5,4 +5,16 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="sample\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Sample\Janken\Actuator.cs.meta" />
+    <None Remove="Sample\Janken\Agent.cs.meta" />
+    <None Remove="Sample\Janken\Computer.cs.meta" />
+    <None Remove="Sample\Janken\Controller.cs.meta" />
+    <None Remove="Sample\Janken\Resolver.cs.meta" />
+    <None Remove="Sample\Janken\Sensor.cs.meta" />
+    <None Remove="Sample\Janken\World.cs.meta" />
+  </ItemGroup>
 </Project>

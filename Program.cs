@@ -1,50 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 
-namespace AI
+namespace AI.Sample
 {
   class Program
   {
     static void Main(string[] args)
     {
-      var agents= Enumerable.Range(0, 1_000).Select(i => new JankenAgent()).ToList();
+
+
+      Janken.GenteiJankenWorld gtjk = Janken.GenteiJankenWorld.From(1000);
+
       var rand = new Random();
-      Func<bool> func = () => agents.Where(agent =>agent.actuator.stock.Where(kv=>0<kv.Value).Any()).Any();
-
-      Func<JankenAgent> pickA = () => agents.Where(
-        agent =>agent.actuator.stock.Where(kv => 0 < kv.Value).Any()
-      ).OrderBy(o=>rand.NextDouble())
-      .First()
-      ;
-      Func<JankenAgent,JankenAgent> pickB = A => agents.Where(
-        agent => agent!=A && agent.actuator.stock.Where(kv => 0 < kv.Value).Any()
-      ).OrderBy(o => rand.NextDouble())
-      .First()
-      ;
-
-      while (func())
+      //場の継続が可能かどうか
+      Console.WriteLine("BEGIN GAME!");
+      while (gtjk.Continue)
       {
-        JankenAgent a = pickA();
-        JankenAgent b = pickB(a);        
-        JankenDirection directionA = new JankenDirection(b);
-        JankenDirection directionB = new JankenDirection(a);
-
-        JankenHandResult resultA =a.Dispatch(directionA);
-        JankenHandResult resultB = b.Dispatch(directionB);
-
-        // リゾルブ
-
-
+        gtjk.Play();
       }
-
-
-
-      
-
-      
-      Console.WriteLine("Hello World!");
+      Console.WriteLine("END GAME!");
     }
   }
 }
