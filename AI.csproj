@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <Folder Include="sample\" />
+    <Folder Include="Core\" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Sample\Janken\Actuator.cs.meta" />
@@ -16,5 +17,13 @@
     <None Remove="Sample\Janken\Resolver.cs.meta" />
     <None Remove="Sample\Janken\Sensor.cs.meta" />
     <None Remove="Sample\Janken\World.cs.meta" />
+    <None Remove="bin.meta" />
+    <None Remove="Agent.cs.meta" />
+    <None Remove="AI.csproj.meta" />
+    <None Remove="AI.sln.meta" />
+    <None Remove="obj.meta" />
+    <None Remove="classes.meta" />
+    <None Remove="Sample.meta" />
+    <None Remove="Program.cs.meta" />
   </ItemGroup>
 </Project>

@@ -7,10 +7,9 @@ namespace AI.Sample.Janken
     TypeJankenHand,
     JKComputerOut>
   {
-
     protected override JKComputerOut doComputeActuate(JKSensorOut sensorOut)
     {
-      throw new NotImplementedException();
+      return new JKComputerOut();
     }
   }
 }

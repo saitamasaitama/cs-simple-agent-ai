@@ -32,10 +32,10 @@ namespace AI.Sample.Janken
 
       foreach (JankenAgent agent in Agents)
       {
-        result.AddRange(Enumerable.Range(0, 10).Select(i => new JKCard(agent, TypeJankenHand.G)));
-        result.AddRange(Enumerable.Range(0, 10).Select(i => new JKCard(agent, TypeJankenHand.C)));
-        result.AddRange(Enumerable.Range(0, 10).Select(i => new JKCard(agent, TypeJankenHand.P)));
-        result.AddRange(Enumerable.Range(0, 3).Select(i => new JKCard(agent, TypeJankenHand.Pass)));
+        result.AddRange(Enumerable.Range(0, Setting.G_DEFAULT).Select(i => new JKCard(agent, TypeJankenHand.G)));
+        result.AddRange(Enumerable.Range(0, Setting.C_DEFAULT).Select(i => new JKCard(agent, TypeJankenHand.C)));
+        result.AddRange(Enumerable.Range(0, Setting.P_DEFAULT).Select(i => new JKCard(agent, TypeJankenHand.P)));
+        result.AddRange(Enumerable.Range(0, Setting.PASS_DEFAULT).Select(i => new JKCard(agent, TypeJankenHand.Pass)));
 
       }
       return result;

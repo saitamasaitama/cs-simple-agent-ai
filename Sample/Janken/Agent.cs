@@ -11,17 +11,17 @@ namespace AI.Sample.Janken
   {
     protected override JankenActuator initActuator()
     {
-      throw new NotImplementedException();
+      return new JankenActuator();
     }
 
     protected override JKComputer initComputer()
     {
-      throw new NotImplementedException();
+      return new JKComputer();
     }
 
     protected override JKSensor initSensor()
     {
-      throw new NotImplementedException();
+      return new JKSensor();
     }
   }
 }
